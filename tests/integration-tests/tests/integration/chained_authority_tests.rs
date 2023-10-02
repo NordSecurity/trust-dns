@@ -319,7 +319,10 @@ fn inner_lookup(
 }
 
 // Boilerplate to query the catalog
-async fn do_query(catalog: &Catalog, query_name: &str) -> (ResponseInfo, TestResponseHandler) {
+async fn do_query(
+    catalog: &Catalog,
+    query_name: &str,
+) -> (Result<ResponseInfo, LookupError>, TestResponseHandler) {
     let mut question: Message = Message::new();
 
     let mut query: Query = Query::new();
@@ -357,6 +360,17 @@ async fn basic_test(catalog: &Catalog, query_name: &'static str, answer: A) {
 async fn error_test(catalog: &Catalog, query_name: &str, r_code: ResponseCode) {
     let (res, _) = do_query(catalog, query_name).await;
 
-    assert_eq!(res.response_code(), r_code);
-    assert_eq!(res.answer_count(), 0);
+    match r_code {
+        ResponseCode::NXDomain => {
+            let res = res.unwrap();
+            assert_eq!(res.response_code(), r_code);
+            assert_eq!(res.answer_count(), 0);
+        }
+        _ => {
+            assert!(matches!(
+                res.unwrap_err(),
+                LookupError::ResponseCode(code) if code == r_code
+            ));
+        }
+    }
 }

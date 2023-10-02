@@ -121,7 +121,15 @@ impl RequestHandler for Catalog {
             MessageType::Query => match request.op_code() {
                 OpCode::Query => {
                     debug!("query received: {}", request.id());
-                    let info = self.lookup(request, response_edns, response_handle).await;
+                    let info = self
+                        .lookup(request, response_edns, response_handle)
+                        .await
+                        .unwrap_or_else(|e| match e {
+                            LookupError::ResponseCode(code) => {
+                                ResponseInfo::response_code_error(request.header().id(), code)
+                            }
+                            _ => ResponseInfo::unknown(request.header().id()),
+                        });
 
                     Ok(info)
                 }
@@ -327,24 +335,22 @@ impl Catalog {
         request: &Request,
         response_edns: Option<Edns>,
         response_handle: R,
-    ) -> ResponseInfo {
+    ) -> Result<ResponseInfo, LookupError> {
         let Ok(request_info) = request.request_info() else {
             // Wrong number of queries
             let response = MessageResponseBuilder::new(request.raw_queries());
-            let result = send_response(
+            send_response(
                 response_edns,
                 response.error_msg(request.header(), ResponseCode::FormErr),
                 response_handle,
             )
-            .await;
+            .await
+            .map_err(|e| {
+                debug!("failed to send response: {e}");
+                LookupError::Io(e)
+            })?;
 
-            match result {
-                Err(e) => {
-                    debug!("failed to send response: {e}");
-                    return ResponseInfo::serve_failed();
-                }
-                Ok(r) => return r,
-            }
+            return Err(LookupError::ResponseCode(ResponseCode::FormErr));
         };
         let authorities = self.find(request_info.query.name());
 
@@ -352,23 +358,21 @@ impl Catalog {
             // There are no authorities registered that can handle the request
             let response = MessageResponseBuilder::new(request.raw_queries());
 
-            let result = send_response(
+            send_response(
                 response_edns,
                 response.error_msg(request.header(), ResponseCode::Refused),
                 response_handle,
             )
-            .await;
+            .await
+            .map_err(|e| {
+                debug!("failed to send response: {}", e);
+                LookupError::Io(e)
+            })?;
 
-            match result {
-                Err(e) => {
-                    debug!("failed to send response: {e}");
-                    return ResponseInfo::serve_failed();
-                }
-                Ok(r) => return r,
-            }
+            return Err(LookupError::ResponseCode(ResponseCode::Refused));
         };
 
-        let result = lookup(
+        lookup(
             request_info.clone(),
             authorities,
             request,
@@ -377,12 +381,7 @@ impl Catalog {
                 .map(|arc| Borrow::<Edns>::borrow(arc).clone()),
             response_handle.clone(),
         )
-        .await;
-
-        match result {
-            Ok(lookup) => lookup,
-            Err(_e) => ResponseInfo::serve_failed(),
-        }
+        .await
     }
 
     /// Recursively searches the catalog for a matching authority
@@ -471,7 +470,7 @@ async fn lookup<R: ResponseHandler + Unpin>(
             query,
             edns,
         )
-        .await;
+        .await?;
 
         let message_response = MessageResponseBuilder::new(request.raw_queries()).build(
             response_header,
@@ -481,15 +480,16 @@ async fn lookup<R: ResponseHandler + Unpin>(
             sections.additionals.iter(),
         );
 
-        let result = send_response(response_edns, message_response, response_handle).await;
-
-        match result {
-            Err(e) => {
-                debug!("error sending response: {e}");
-                return Err(LookupError::Io(e));
-            }
-            Ok(l) => return Ok(l),
-        }
+        return send_response(
+            response_edns.clone(),
+            message_response,
+            response_handle.clone(),
+        )
+        .await
+        .map_err(|e| {
+            debug!("error sending response: {e}");
+            LookupError::Io(e)
+        });
     }
 
     debug!("end of chained authority loop reached with all authorities not answering");
@@ -520,7 +520,7 @@ async fn build_response(
     request_header: &Header,
     query: &LowerQuery,
     edns: Option<&Edns>,
-) -> (Header, LookupSections) {
+) -> Result<(Header, LookupSections), LookupError> {
     let lookup_options = lookup_options_for_edns(edns);
 
     let mut response_header = Header::response_from_request(request_header);
@@ -537,7 +537,7 @@ async fn build_response(
                 request_id,
                 query,
             )
-            .await
+            .await?
         }
         ZoneType::External => {
             build_forwarded_response(
@@ -548,11 +548,11 @@ async fn build_response(
                 query,
                 lookup_options,
             )
-            .await
+            .await?
         }
     };
 
-    (response_header, sections)
+    Ok((response_header, sections))
 }
 
 /// Prepare a response for an authoritative zone
@@ -563,7 +563,7 @@ async fn build_authoritative_response(
     lookup_options: LookupOptions,
     _request_id: u16,
     query: &LowerQuery,
-) -> LookupSections {
+) -> Result<LookupSections, LookupError> {
     // In this state we await the records, on success we transition to getting
     // NS records, which indicate an authoritative response.
     //
@@ -579,12 +579,12 @@ async fn build_authoritative_response(
         // TODO: there are probably other error cases that should just drop through (FormErr, ServFail)
         Err(LookupError::ResponseCode(ResponseCode::Refused)) => {
             response_header.set_response_code(ResponseCode::Refused);
-            return LookupSections {
+            return Ok(LookupSections {
                 answers: Box::<AuthLookup>::default(),
                 ns: Box::<AuthLookup>::default(),
                 soa: Box::<AuthLookup>::default(),
                 additionals: Box::<AuthLookup>::default(),
-            };
+            });
         }
         Err(e) => {
             if e.is_nx_domain() {
@@ -743,12 +743,12 @@ async fn build_authoritative_response(
         ),
     };
 
-    LookupSections {
+    Ok(LookupSections {
         answers,
         ns: ns.unwrap_or_else(|| Box::<AuthLookup>::default()),
         soa: soa.unwrap_or_else(|| Box::<AuthLookup>::default()),
         additionals,
-    }
+    })
 }
 
 /// Prepare a response for a forwarded zone.
@@ -759,7 +759,7 @@ async fn build_forwarded_response(
     can_validate_dnssec: bool,
     query: &LowerQuery,
     lookup_options: LookupOptions,
-) -> LookupSections {
+) -> Result<LookupSections, LookupError> {
     response_header.set_recursion_available(true);
     response_header.set_authoritative(false);
 
@@ -776,12 +776,7 @@ async fn build_forwarded_response(
             );
             response_header.set_response_code(ResponseCode::Refused);
 
-            return LookupSections {
-                answers: Box::new(EmptyLookup),
-                ns: Box::new(EmptyLookup),
-                soa: Box::new(EmptyLookup),
-                additionals: Box::new(EmptyLookup),
-            };
+            return Err(LookupError::ResponseCode(ResponseCode::Refused));
         }
         Ok(l) => (Answer::Normal(l), Box::<AuthLookup>::default()),
         Err(e) if e.is_no_records_found() || e.is_nx_domain() => {
@@ -922,7 +917,7 @@ async fn build_forwarded_response(
         authorities
     };
 
-    match answers {
+    let result = match answers {
         Answer::Normal(answers) => LookupSections {
             answers,
             ns: authorities,
@@ -935,7 +930,9 @@ async fn build_forwarded_response(
             soa,
             additionals: Box::<AuthLookup>::default(),
         },
-    }
+    };
+
+    Ok(result)
 }
 
 struct LookupSections {
