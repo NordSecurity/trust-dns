@@ -13,7 +13,7 @@ use hickory_proto::{
     rr::Record,
     serialize::binary::BinEncodable,
 };
-use tracing::{debug, error, trace};
+use tracing::{debug, trace};
 
 use crate::{
     authority::MessageResponse,
@@ -131,7 +131,7 @@ impl ResponseHandler for ResponseHandle {
         };
 
         let info = encode_result.or_else(|error| {
-            error!(%error, "error encoding message");
+            debug!(%error, "error encoding message");
             encode_fallback_servfail_response(id, &mut buffer)
         })?;
 

@@ -99,7 +99,7 @@ where
 
             #[cfg(not(feature = "__dnssec"))]
             {
-                tracing::warn!("validate option is only available with dnssec features");
+                debug!("validate option is only available with dnssec features");
                 either = LookupEither::Retry(client);
             }
         } else {

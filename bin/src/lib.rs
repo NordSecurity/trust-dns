@@ -63,7 +63,7 @@ use hickory_server::{
     authority::{AuthorityObject, ZoneType},
     store::file::FileAuthority,
 };
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 #[cfg(feature = "prometheus-metrics")]
 mod prometheus_server;

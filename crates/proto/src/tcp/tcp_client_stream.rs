@@ -14,7 +14,7 @@ use core::time::Duration;
 use std::net::SocketAddr;
 
 use futures_util::{StreamExt, stream::Stream};
-use tracing::warn;
+use tracing::debug;
 
 use crate::BufDnsStreamHandle;
 use crate::error::ProtoError;
@@ -93,7 +93,7 @@ impl<S: DnsTcpStream> Stream for TcpClientStream<S> {
         let peer = self.tcp_stream.peer_addr();
         if message.addr() != peer {
             // TODO: this should be an error, right?
-            warn!("{} does not match name_server: {}", message.addr(), peer)
+            debug!("{} does not match name_server: {}", message.addr(), peer)
         }
 
         Poll::Ready(Some(Ok(message)))

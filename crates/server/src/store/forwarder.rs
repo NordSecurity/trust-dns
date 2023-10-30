@@ -116,7 +116,7 @@ impl<P: ConnectionProvider> ForwardAuthorityBuilder<P> {
         // preserve_intermediates enables when set to true, and disables
         // when set to false. So we set it to true.
         if !options.preserve_intermediates {
-            tracing::warn!(
+            debug!(
                 "preserve_intermediates set to false, which is invalid \
                 for a forwarder; switching to true"
             );

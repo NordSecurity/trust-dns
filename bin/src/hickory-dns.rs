@@ -48,9 +48,8 @@ use tokio::{
     net::{TcpListener, UdpSocket},
     runtime,
 };
-#[cfg(any(feature = "__tls", feature = "__https", feature = "__quic"))]
-use tracing::warn;
-use tracing::{Event, Level, Subscriber, error, info};
+
+use tracing::{Event, Level, Subscriber, debug, info};
 use tracing_subscriber::{
     EnvFilter,
     fmt::{FmtContext, FormatEvent, FormatFields, FormattedFields, format},
@@ -463,7 +462,7 @@ async fn async_run(args: Cli) -> Result<(), String> {
                 e
             );
 
-            error!("{}", error_msg);
+            debug!("{}", error_msg);
             panic!("{}", error_msg);
         }
     };
@@ -492,7 +491,7 @@ fn config_tls(
     let tls_listen_port = tls_port.unwrap_or_else(|| config.tls_listen_port());
 
     if listen_addrs.is_empty() {
-        warn!("a tls certificate was specified, but no TLS addresses configured to listen on");
+        debug!("a tls certificate was specified, but no TLS addresses configured to listen on");
         return Ok(());
     }
 
@@ -536,7 +535,7 @@ fn config_https(
     let endpoint_path = config.http_endpoint();
 
     if listen_addrs.is_empty() {
-        warn!("a tls certificate was specified, but no HTTPS addresses configured to listen on");
+        debug!("a tls certificate was specified, but no HTTPS addresses configured to listen on");
         return Ok(());
     }
 
@@ -590,7 +589,7 @@ fn config_quic(
     let quic_listen_port = quic_port.unwrap_or_else(|| config.quic_listen_port());
 
     if listen_addrs.is_empty() {
-        warn!("a tls certificate was specified, but no QUIC addresses configured to listen on");
+        debug!("a tls certificate was specified, but no QUIC addresses configured to listen on");
         return Ok(());
     }
 

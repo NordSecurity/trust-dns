@@ -13,7 +13,7 @@ use std::{fmt, io, sync::Arc};
 
 use enum_as_inner::EnumAsInner;
 use thiserror::Error;
-use tracing::warn;
+use tracing::debug;
 
 #[cfg(feature = "backtrace")]
 use crate::proto::{ExtBacktrace, trace};
@@ -150,7 +150,7 @@ impl Error {
             _ => return Ok(()),
         }
 
-        warn!("recursion depth exceeded for {name}");
+        debug!("recursion depth exceeded for {name}");
         Err(ErrorKind::RecursionLimitExceeded {
             count: depth as usize,
         }

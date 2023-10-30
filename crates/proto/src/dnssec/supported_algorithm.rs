@@ -22,7 +22,7 @@ use core::fmt::{self, Display, Formatter};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use tracing::warn;
+use tracing::debug;
 
 use super::Algorithm;
 use crate::error::ProtoResult;
@@ -148,7 +148,7 @@ impl<'a> From<&'a [u8]> for SupportedAlgorithms {
 
         for a in values.iter().map(|i| Algorithm::from_u8(*i)) {
             match a {
-                Algorithm::Unknown(v) => warn!("unrecognized algorithm: {}", v),
+                Algorithm::Unknown(v) => debug!("unrecognized algorithm: {}", v),
                 a => supported.set(a),
             }
         }

@@ -14,7 +14,7 @@ use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use lru_cache::LruCache;
 use parking_lot::Mutex;
 use prefix_trie::PrefixSet;
-use tracing::{debug, info, trace, warn};
+use tracing::{debug, info, trace};
 
 use crate::{
     Error, ErrorKind,
@@ -328,7 +328,7 @@ impl RecursorDnsHandle {
 
             let count = cname_limit.fetch_add(1, Ordering::Relaxed) + 1;
             if count > MAX_CNAME_LOOKUPS {
-                warn!("cname limit exceeded for query {query}");
+                debug!("cname limit exceeded for query {query}");
                 return Err(ErrorKind::Proto(
                     ProtoErrorKind::MaxRecordLimitExceeded {
                         count: count as usize,
@@ -415,7 +415,7 @@ impl RecursorDnsHandle {
                 Some(r),
             )),
             Err(e) => {
-                warn!("lookup error: {e}");
+                debug!("lookup error: {e}");
                 Err(Error::from(e))
             }
         }
@@ -504,7 +504,7 @@ impl RecursorDnsHandle {
             };
 
             if !super::is_subzone(&zone.base_name(), zns.name()) {
-                warn!(
+                debug!(
                     "dropping out of bailiwick record for {:?} with parent {:?}",
                     zns.name(),
                     zone.base_name(),
@@ -794,7 +794,7 @@ impl RecursorDnsHandle {
                     config.append_ips(ip_iter, true);
                 }
                 Err(e) => {
-                    warn!("append_ips_from_lookup: resolution failed failed: {e}");
+                    debug!("append_ips_from_lookup: resolution failed failed: {e}");
                 }
             }
         }

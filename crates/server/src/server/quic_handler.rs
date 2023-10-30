@@ -10,7 +10,7 @@ use std::{io, net::SocketAddr, sync::Arc};
 use bytes::Bytes;
 use futures_util::lock::Mutex;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, warn};
+use tracing::debug;
 
 use crate::{
     access::AccessControl,
@@ -48,7 +48,7 @@ where
             result = quic_streams.next() => match result {
                 Some(Ok(next_request)) => next_request,
                 Some(Err(err)) => {
-                    warn!("error accepting request {}: {}", src_addr, err);
+                    debug!("error accepting request {}: {}", src_addr, err);
                     return Err(err);
                 }
                 None => {
@@ -84,7 +84,7 @@ where
 
         max_requests -= 1;
         if max_requests == 0 {
-            warn!("exceeded request count, shutting down quic conn: {src_addr}");
+            debug!("exceeded request count, shutting down quic conn: {src_addr}");
             // DOQ_NO_ERROR (0x0): No error. This is used when the connection or stream needs to be closed, but there is no error to signal.
             stream.lock().await.stop(DoqErrorCode::NoError)?;
             break;
@@ -122,7 +122,7 @@ impl ResponseHandler for QuicResponseHandle {
         let info = {
             let mut encoder = BinEncoder::new(&mut bytes);
             response.destructive_emit(&mut encoder).or_else(|error| {
-                error!(%error, "error encoding message");
+                debug!(%error, "error encoding message");
                 encode_fallback_servfail_response(id, &mut bytes)
             })?
         };

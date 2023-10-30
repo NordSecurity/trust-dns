@@ -8,7 +8,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::{iter::Chain, slice::Iter};
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 use crate::rr::{DNSClass, Name, RData, Record, RecordType};
 
@@ -289,7 +289,7 @@ impl RecordSet {
                             }
                         }
                         rdata => {
-                            warn!("wrong rdata: {:?}, expected SOA", rdata);
+                            debug!("wrong rdata: {:?}, expected SOA", rdata);
                             return false;
                         }
                     }

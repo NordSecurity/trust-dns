@@ -13,7 +13,7 @@ use h2::server;
 use hickory_proto::{http::Version, rr::Record};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, warn};
+use tracing::debug;
 
 use crate::{
     access::AccessControl,
@@ -45,7 +45,7 @@ pub(crate) async fn h2_handler<T, I>(
     let mut h2 = match server::handshake(io).await {
         Ok(h2) => h2,
         Err(err) => {
-            warn!("handshake error from {}: {}", src_addr, err);
+            debug!("handshake error from {}: {}", src_addr, err);
             return;
         }
     };
@@ -57,7 +57,7 @@ pub(crate) async fn h2_handler<T, I>(
             result = h2.accept() => match result {
                 Some(Ok(next_request)) => next_request,
                 Some(Err(err)) => {
-                    warn!("error accepting request {}: {}", src_addr, err);
+                    debug!("error accepting request {}: {}", src_addr, err);
                         return;
                 }
                 None => {
@@ -81,7 +81,7 @@ pub(crate) async fn h2_handler<T, I>(
             let body = match h2_server::message_from(dns_hostname, http_endpoint, request).await {
                 Ok(bytes) => bytes,
                 Err(err) => {
-                    warn!("error while handling request from {}: {}", src_addr, err);
+                    debug!("error while handling request from {}: {}", src_addr, err);
                     return;
                 }
             };
@@ -120,7 +120,7 @@ impl ResponseHandler for HttpsResponseHandle {
         let info = {
             let mut encoder = BinEncoder::new(&mut bytes);
             response.destructive_emit(&mut encoder).or_else(|error| {
-                error!(%error, "error encoding message");
+                debug!(%error, "error encoding message");
                 encode_fallback_servfail_response(id, &mut bytes)
             })?
         };

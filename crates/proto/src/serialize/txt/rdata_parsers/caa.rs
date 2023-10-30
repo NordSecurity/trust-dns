@@ -17,7 +17,7 @@
 //! mail exchange, email, record
 
 use alloc::string::ToString;
-use tracing::warn;
+use tracing::debug;
 
 use crate::rr::rdata::CAA;
 use crate::rr::rdata::caa::{Property, read_value};
@@ -61,7 +61,7 @@ pub(crate) fn parse<'i, I: Iterator<Item = &'i str>>(mut tokens: I) -> ParseResu
     let issuer_critical = (flags & 0b1000_0000) != 0;
     let reserved_flags = flags & 0b0111_1111;
     if reserved_flags != 0 {
-        warn!("unexpected flag values in caa (0 or 128): {}", flags);
+        debug!("unexpected flag values in caa (0 or 128): {}", flags);
     }
 
     // parse the tag
@@ -69,7 +69,7 @@ pub(crate) fn parse<'i, I: Iterator<Item = &'i str>>(mut tokens: I) -> ParseResu
         // unnecessary clone
         let tag = Property::from(tag_str.to_string());
         if tag.is_unknown() {
-            warn!("unknown tag found for caa: {:?}", tag);
+            debug!("unknown tag found for caa: {:?}", tag);
         }
         tag
     };

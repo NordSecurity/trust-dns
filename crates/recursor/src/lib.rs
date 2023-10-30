@@ -44,7 +44,7 @@ use proto::dnssec::TrustAnchors;
 use proto::{op::Query, xfer::DnsResponse};
 pub use recursor::{Recursor, RecursorBuilder};
 use resolver::{Name, dns_lru::DnsLru, lookup::Lookup};
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 /// `Recursor`'s DNSSEC policy
 // `Copy` can only be implemented when `dnssec` is disabled we don't want to remove a trait
@@ -98,7 +98,7 @@ fn cache_response(
         .filter(|x| {
             if let Some(zone) = zone {
                 if !is_subzone(zone, x.name()) {
-                    warn!("Dropping out of bailiwick record {x} for zone {}", zone);
+                    debug!("Dropping out of bailiwick record {x} for zone {}", zone);
                     false
                 } else {
                     true

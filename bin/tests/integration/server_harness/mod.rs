@@ -25,7 +25,7 @@ use hickory_proto::{
 };
 use regex::Regex;
 use tokio::runtime::Runtime;
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 #[derive(Debug, Default)]
 pub struct SocketPort {
@@ -148,11 +148,11 @@ where
 
                 let mut named = named_killer.lock().unwrap();
                 if let Err(error) = named.kill() {
-                    warn!(?error, "warning: failed to kill named");
+                    debug!(?error, "warning: failed to kill named");
                     return;
                 }
                 if let Err(error) = named.wait() {
-                    warn!(?error, "warning: failed to wait for named");
+                    debug!(?error, "warning: failed to wait for named");
                 }
             };
 

@@ -23,7 +23,7 @@ use h3_quinn::OpenStreams;
 use http::header::{self, CONTENT_LENGTH};
 use quinn::{Endpoint, EndpointConfig, TransportConfig};
 use tokio::sync::mpsc;
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::error::ProtoError;
 use crate::http::Version;
@@ -413,7 +413,7 @@ impl H3ClientStreamBuilder {
         tokio::spawn(async move {
             tokio::select! {
                 res = poll_fn(|cx| driver.poll_close(cx)) => {
-                    res.map_err(|e| warn!("h3 connection failed: {e}"))
+                    res.map_err(|e| debug!("h3 connection failed: {e}"))
                 }
                 _ = shutdown_rx.recv() => {
                     debug!("h3 connection is shutting down: {}", name_server);

@@ -18,7 +18,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+
+use tracing::debug;
 
 use crate::{
     error::{ProtoError, ProtoErrorKind, ProtoResult},
@@ -314,7 +315,7 @@ impl<'r> RecordDataDecodable<'r> for OPT {
         if state != OptReadState::ReadCode {
             // there was some problem parsing the data for the options, ignoring them
             // TODO: should we ignore all of the EDNS data in this case?
-            warn!("incomplete or poorly formatted EDNS options: {:?}", state);
+            debug!("incomplete or poorly formatted EDNS options: {:?}", state);
             options.clear();
         }
 

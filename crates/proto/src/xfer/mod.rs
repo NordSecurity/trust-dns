@@ -25,7 +25,7 @@ use futures_util::stream::{Stream, StreamExt};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::error::{ProtoError, ProtoErrorKind};
 #[cfg(feature = "std")]
@@ -64,7 +64,7 @@ fn ignore_send<M, T>(result: Result<M, mpsc::TrySendError<T>>) {
             return;
         }
 
-        warn!("error notifying wait, possible future leak: {:?}", error);
+        debug!("error notifying wait, possible future leak: {:?}", error);
     }
 }
 

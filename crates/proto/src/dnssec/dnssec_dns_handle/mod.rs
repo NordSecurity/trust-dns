@@ -18,7 +18,7 @@ use futures_util::{
     future::{self, TryFutureExt},
     stream::{self, Stream, TryStreamExt},
 };
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, trace};
 
 use crate::{
     dnssec::{
@@ -118,7 +118,7 @@ where
 
         // backstop
         if self.request_depth > request.options().max_request_depth {
-            error!("exceeded max validation depth");
+            debug!("exceeded max validation depth");
             return Box::pin(stream::once(future::err(ProtoError::from(
                 "exceeded max validation depth",
             ))));
@@ -266,13 +266,13 @@ fn check_nsec(verified_message: DnsResponse, query: &Query) -> Result<DnsRespons
         ),
         (false, true) => verify_nsec(query, soa_name, nsecs.as_slice()),
         (true, true) => {
-            warn!(
+            debug!(
                 "response contains both NSEC and NSEC3 records\nQuery:\n{query:?}\nResponse:\n{verified_message:?}"
             );
             Proof::Bogus
         }
         (false, false) => {
-            warn!(
+            debug!(
                 "response does not contain NSEC or NSEC3 records. Query: {query:?} response: {verified_message:?}"
             );
             Proof::Bogus
@@ -441,7 +441,7 @@ where
                     rrsig.set_ttl(ttl);
                 }
             } else {
-                warn!(
+                debug!(
                     "bad rrsig index {rrsig_idx} rrsigs.len = {}",
                     current_rrsigs.len()
                 );
@@ -729,7 +729,7 @@ fn verify_dnskey(
         // checking hashes or signatures protects us from KeyTrap denial of service attacks.
         key_authentication_attempts += 1;
         if key_authentication_attempts > MAX_KEY_TAG_COLLISIONS {
-            warn!(
+            debug!(
                 key_tag,
                 attempts = key_authentication_attempts,
                 "too many DS records with same key tag; skipping"
@@ -967,7 +967,7 @@ where
             let query = Query::query(rrsig.data().signer_name().clone(), RecordType::DNSKEY);
 
             if i > MAX_RRSIGS_PER_RRSET {
-                warn!("too many ({i}) RRSIGs for rrset {rrset:?}; skipping");
+                debug!("too many ({i}) RRSIGs for rrset {rrset:?}; skipping");
                 return None;
             }
 
@@ -991,7 +991,7 @@ where
                             let tag = match dnskey.data().calculate_key_tag() {
                                 Ok(tag) => tag,
                                 Err(e) => {
-                                    warn!("unable to calculate key tag: {e:?}; skipping key");
+                                    debug!("unable to calculate key tag: {e:?}; skipping key");
                                     return None;
                                 }
                             };
@@ -1000,7 +1000,7 @@ where
                                 Some(n_keys) => {
                                     *n_keys += 1;
                                     if *n_keys > MAX_KEY_TAG_COLLISIONS {
-                                        warn!("too many ({n_keys}) DNSKEYs with key tag {tag}; skipping");
+                                        debug!("too many ({n_keys}) DNSKEYs with key tag {tag}; skipping");
                                         return None;
                                     }
                                 }

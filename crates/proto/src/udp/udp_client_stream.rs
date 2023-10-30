@@ -17,7 +17,7 @@ use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use futures_util::{future::Future, stream::Stream};
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 use crate::error::{ProtoError, ProtoErrorKind};
 use crate::op::{Message, MessageFinalizer, MessageVerifier, Query};
@@ -314,7 +314,7 @@ async fn send_serial_message_inner<S: DnsUdpSocket + Send>(
 
         // Comparing the IP and Port directly as internal information about the link is stored with the IpAddr, see https://github.com/hickory-dns/hickory-dns/issues/2081
         if src.ip() != request_target.ip() || src.port() != request_target.port() {
-            warn!(
+            debug!(
                 "ignoring response from {} because it does not match name_server: {}.",
                 src, request_target,
             );
@@ -327,7 +327,7 @@ async fn send_serial_message_inner<S: DnsUdpSocket + Send>(
             Ok(response) => response,
             Err(e) => {
                 // on errors deserializing, continue
-                warn!("dropped malformed message waiting for id: {msg_id} err: {e}");
+                debug!("dropped malformed message waiting for id: {msg_id} err: {e}");
                 continue;
             }
         };
@@ -335,7 +335,7 @@ async fn send_serial_message_inner<S: DnsUdpSocket + Send>(
         // Validate the message id in the response matches the value chosen for the query.
         if msg_id != response.id() {
             // on wrong id, attempted poison?
-            warn!(
+            debug!(
                 "expected message id: {} got: {}, dropped",
                 msg_id,
                 response.id()
@@ -384,13 +384,13 @@ async fn send_serial_message_inner<S: DnsUdpSocket + Send>(
                     .any(|req_q| req_q == elem && req_q.name().eq_case(elem.name()))
             })
         {
-            warn!(
+            debug!(
                 "case of question section did not match: we expected '{request_queries:?}', but received '{response_queries:?}' from server {src}"
             );
             return Err(ProtoErrorKind::QueryCaseMismatch.into());
         }
         if !question_matches {
-            warn!(
+            debug!(
                 "detected forged question section: we expected '{request_queries:?}', but received '{response_queries:?}' from server {src}"
             );
             continue;

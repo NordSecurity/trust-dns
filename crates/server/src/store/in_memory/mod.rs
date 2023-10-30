@@ -13,8 +13,6 @@ use std::{collections::BTreeMap, ops::DerefMut, sync::Arc};
 
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::debug;
-#[cfg(feature = "__dnssec")]
-use tracing::warn;
 
 use crate::{
     authority::{
@@ -507,7 +505,7 @@ impl Authority for InMemoryAuthority {
                                         self.class(),
                                     )
                                     // rather than failing the request, we'll just warn
-                                    .map_err(|e| warn!("failed to sign ANAME record: {}", e))
+                                    .map_err(|e| debug!("failed to sign ANAME record: {}", e))
                                     .ok();
                                 }
 

@@ -12,7 +12,7 @@ use futures_util::lock::Mutex;
 use h3::server::RequestStream;
 use h3_quinn::BidiStream;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, warn};
+use tracing::debug;
 
 use crate::{
     access::AccessControl,
@@ -51,7 +51,7 @@ where
             result = connection.accept() => match result {
                 Some(Ok(next_request)) => next_request,
                 Some(Err(err)) => {
-                    warn!("error accepting request {}: {}", src_addr, err);
+                    debug!("error accepting request {}: {}", src_addr, err);
                     return Err(err);
                 }
                 None => {
@@ -89,7 +89,7 @@ where
 
         max_requests -= 1;
         if max_requests == 0 {
-            warn!("exceeded request count, shutting down h3 conn: {src_addr}");
+            debug!("exceeded request count, shutting down h3 conn: {src_addr}");
             connection.shutdown().await?;
             break;
         }
@@ -124,7 +124,7 @@ impl ResponseHandler for H3ResponseHandle {
         let info = {
             let mut encoder = BinEncoder::new(&mut bytes);
             response.destructive_emit(&mut encoder).or_else(|error| {
-                error!(%error, "error encoding message");
+                debug!(%error, "error encoding message");
                 encode_fallback_servfail_response(id, &mut bytes)
             })?
         };

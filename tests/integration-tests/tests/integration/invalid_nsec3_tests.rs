@@ -42,7 +42,7 @@ use hickory_server::{
 };
 use test_support::subscribe;
 use tokio::{net::UdpSocket, spawn};
-use tracing::error;
+use tracing::debug;
 
 /// Based on RFC 5155 section B.1.
 #[tokio::test]
@@ -430,7 +430,7 @@ impl RequestHandler for MockHandler {
         {
             send_response(response_handle, request, &self.dnskey_response).await
         } else {
-            error!(query = ?request_info.query, "unexpected request");
+            debug!(query = ?request_info.query, "unexpected request");
             let response_builder = MessageResponseBuilder::from_message_request(request);
             let mut response_header = Header::response_from_request(request.header());
             response_header.set_response_code(ResponseCode::ServFail);
@@ -438,7 +438,7 @@ impl RequestHandler for MockHandler {
                 .send_response(response_builder.build_no_records(response_header))
                 .await;
             if let Err(e) = result {
-                error!(error = %e, "error responding to request");
+                debug!(error = %e, "error responding to request");
             }
             response_header.into()
         }
@@ -473,7 +473,7 @@ async fn send_response(
     match result {
         Ok(info) => info,
         Err(e) => {
-            error!(error = %e, "error responding to request");
+            debug!(error = %e, "error responding to request");
             (*Header::new().set_response_code(ResponseCode::ServFail)).into()
         }
     }

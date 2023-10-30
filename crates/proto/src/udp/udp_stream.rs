@@ -17,7 +17,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use async_trait::async_trait;
 use futures_util::stream::Stream;
 use futures_util::{TryFutureExt, future::Future, ready};
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 use crate::runtime::{RuntimeProvider, Time};
 use crate::udp::MAX_RECEIVE_BUFFER_SIZE;
@@ -202,7 +202,7 @@ impl<P: RuntimeProvider> Stream for UdpStream<P> {
             // TODO: shouldn't this return the error to send to the sender?
             if let Err(e) = ready!(socket.poll_send_to(cx, message.bytes(), addr)) {
                 // Drop the UDP packet and continue
-                warn!(
+                debug!(
                     "error sending message to {} on udp_socket, dropping response: {}",
                     addr, e
                 );

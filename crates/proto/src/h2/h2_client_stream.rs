@@ -27,7 +27,7 @@ use rustls::ClientConfig;
 use rustls::pki_types::ServerName;
 use tokio::time::{error, timeout};
 use tokio_rustls::{TlsConnector, client::TlsStream as TokioTlsClientStream};
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::error::ProtoError;
 use crate::http::Version;
@@ -535,7 +535,7 @@ where
                     debug!("h2 connection established to: {}", name_server);
                     tokio::spawn(
                         connection
-                            .map_err(|e| warn!("h2 connection failed: {e}"))
+                            .map_err(|e| debug!("h2 connection failed: {e}"))
                             .map(|_: Result<(), ()>| ()),
                     );
 

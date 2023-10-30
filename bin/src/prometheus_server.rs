@@ -9,7 +9,7 @@ use hyper_util::{
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use tokio::{net::TcpListener, select, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error};
+use tracing::debug;
 
 /// An HTTP server that repsonds to Prometheus scrape requests.
 pub struct PrometheusServer {
@@ -70,7 +70,7 @@ impl PrometheusServer {
     pub async fn stop(self) {
         self.cancellation_token.cancel();
         if let Err(error) = self.join_handle.await {
-            error!(%error, "Error from Prometheus server task");
+            debug!(%error, "Error from Prometheus server task");
         }
     }
 }

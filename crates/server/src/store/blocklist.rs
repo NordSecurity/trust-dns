@@ -21,7 +21,7 @@ use std::{
 };
 
 use serde::Deserialize;
-use tracing::{error, info, trace};
+use tracing::{debug, info, trace};
 
 #[cfg(feature = "__dnssec")]
 use crate::{authority::Nsec3QueryInfo, dnssec::NxProofKind};
@@ -213,7 +213,7 @@ impl BlocklistAuthority {
         let mut contents = String::new();
 
         if let Err(e) = handle.read_to_string(&mut contents) {
-            error!("unable to read blocklist data: {e:?}");
+            debug!("unable to read blocklist data: {e:?}");
             return Err(e);
         }
 
@@ -233,7 +233,7 @@ impl BlocklistAuthority {
             }
 
             let Ok(name) = LowerName::from_str(&str_entry[..]) else {
-                error!(
+                debug!(
                     "unable to derive LowerName for blocklist entry '{str_entry}'; skipping entry"
                 );
                 continue;
@@ -522,7 +522,6 @@ mod test {
         str::FromStr,
         sync::Arc,
     };
-    use tracing::error;
 
     use crate::{
         authority::{AuthorityObject, LookupOptions, ZoneType},
@@ -682,7 +681,7 @@ mod test {
         match authority {
             Ok(ref _authority) => {}
             Err(e) => {
-                error!("Unable to create blocklist authority: {e}");
+                tracing::debug!("Unable to create blocklist authority: {e}");
                 return;
             }
         }
