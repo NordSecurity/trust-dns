@@ -308,6 +308,7 @@ async fn parallel_conn_loop<P>(
 where
     P: ConnectionProvider + 'static,
 {
+    debug!("conns: {conns:?}");
     let mut err = ResolveError::no_connections();
     // If the name server we're trying is giving us backpressure by returning ProtoErrorKind::Busy,
     // we will first try the other name servers (as for other error types). However, if the other
@@ -345,6 +346,8 @@ where
             }
         }
 
+        debug!("trying with par_cons: {par_conns:?}, busy: {busy:?}");
+
         if par_conns.is_empty() {
             if !busy.is_empty() && backoff < Duration::from_millis(300) {
                 <<P as ConnectionProvider>::RuntimeProvider as RuntimeProvider>::Timer::delay_for(
@@ -368,6 +371,7 @@ where
             .collect::<FuturesUnordered<_>>();
 
         while let Some(result) = requests.next().await {
+            debug!("got a request result: {result:?}");
             let (conn, e) = match result {
                 Ok(sent) => return Ok(sent),
                 Err((conn, e)) => (conn, e),

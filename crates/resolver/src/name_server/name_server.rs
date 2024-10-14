@@ -98,7 +98,9 @@ where
     ///
     /// If the connection is in a failed state, then this will establish a new connection
     async fn connected_mut_client(&mut self) -> Result<P::Conn, ResolveError> {
+        debug!("connected_mut_client will lock");
         let mut client = self.client.lock().await;
+        debug!("connected_mut_client lock acquired");
 
         // if this is in a failure state
         if self.state.is_failed() || client.is_none() {
@@ -130,8 +132,10 @@ where
     ) -> Result<DnsResponse, ResolveError> {
         let client = self.connected_mut_client().await?;
         let now = Instant::now();
+        debug!("client will send a request");
         let response = client.send(request).first_answer().await;
         let rtt = now.elapsed();
+        debug!("It took: {rtt:?}");
 
         match response {
             Ok(response) => {
@@ -184,6 +188,7 @@ where
 
     // TODO: there needs to be some way of customizing the connection based on EDNS options from the server side...
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
+        debug!("NameServer::send");
         let this = self.clone();
         // if state is failed, return future::err(), unless retry delay expired..
         Box::pin(once(this.inner_send(request)))
