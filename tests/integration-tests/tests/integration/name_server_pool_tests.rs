@@ -619,7 +619,7 @@ fn test_distrust_nx_responses() {
         let response = block_on(fut).expect("query did not eventually succeed");
         assert_eq!(
             response.answers(),
-            [v4_record.clone()],
+            std::slice::from_ref(&v4_record),
             "did not see expected fallback behavior on response code `{}`",
             response_code
         );
