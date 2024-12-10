@@ -37,7 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.89.0
 
       - uses: extractions/setup-just@v3
 
@@ -62,8 +64,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.89.0
           targets: wasm32-wasip1
 
       - name: check
@@ -126,7 +129,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.89.0
 
       - uses: extractions/setup-just@v3
 
@@ -154,7 +159,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.89.0
 
       - name: cargo install cargo-all-features
         uses: baptiste0928/cargo-install@v3
@@ -216,9 +223,9 @@ jobs:
             ${{ runner.os }}-cargo-all
             ${{ runner.os }}-cargo
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.89.0
           components: rustfmt, clippy
 
       - uses: extractions/setup-just@v3
