@@ -18,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: dtolnay/rust-toolchain@stable
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 1.89.0
 
     - uses: extractions/setup-just@v3
 
