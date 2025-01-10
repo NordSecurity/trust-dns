@@ -185,6 +185,7 @@ where
     // TODO: there needs to be some way of customizing the connection based on EDNS options from the server side...
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
         let this = self.clone();
+        debug!("Dns response recieved");
         // if state is failed, return future::err(), unless retry delay expired..
         Box::pin(once(this.inner_send(request)))
     }

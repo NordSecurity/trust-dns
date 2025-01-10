@@ -18,6 +18,7 @@ use std::sync::Arc;
 
 use futures_util::stream::{Stream, StreamExt};
 use tokio::runtime::{self, Runtime};
+use tracing::debug;
 
 use crate::client::async_client::ClientStreamXfr;
 use crate::client::{AsyncClient, ClientConnection, ClientHandle, Signer};
@@ -99,10 +100,12 @@ pub trait Client {
         &self,
         msg: R,
     ) -> Vec<ClientResult<DnsResponse>> {
+        debug!("Sending dns request");
         let (client, runtime) = match self.spawn_client() {
             Ok(c_r) => c_r,
             Err(e) => return vec![Err(e)],
         };
+        debug!("Dns response recieved");
         runtime.block_on(ClientStreamingResponse(client.send(msg)).collect::<Vec<_>>())
     }
 
