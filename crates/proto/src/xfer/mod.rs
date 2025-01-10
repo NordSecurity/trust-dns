@@ -168,6 +168,7 @@ impl DnsHandle for BufDnsRequestStreamHandle {
     type Error = ProtoError;
 
     fn send<R: Into<DnsRequest>>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         let request: DnsRequest = request.into();
         debug!(
             "enqueueing message:{}:{:?}",

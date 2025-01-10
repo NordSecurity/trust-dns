@@ -64,8 +64,9 @@ where
     type Error = <H as DnsHandle>::Error;
 
     fn send<R: Into<DnsRequest>>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         let request = request.into();
-
+        tracing::debug!("Request obj converted");
         // need to clone here so that the retry can resend if necessary...
         //  obviously it would be nice to be lazy about this...
         let stream = self.handle.send(request.clone());
@@ -99,23 +100,30 @@ where
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // loop over the stream, on errors, spawn a new stream
         //  on ready and not ready return.
+        tracing::debug!("poll_next");
         loop {
             match self.stream.poll_next_unpin(cx) {
                 Poll::Ready(Some(Err(e))) => {
+                    tracing::debug!("poll ready error {e}");
                     if self.remaining_attempts == 0 || !e.should_retry() {
                         return Poll::Ready(Some(Err(e)));
                     }
 
                     if e.attempted() {
+                        tracing::debug!("poll attempted");
                         self.remaining_attempts -= 1;
                     }
 
                     // TODO: if the "sent" Message is part of the error result,
                     //  then we can just reuse it... and no clone necessary
                     let request = self.request.clone();
+                    tracing::debug!("sending ready");
                     self.stream = self.handle.send(request);
                 }
-                poll => return poll,
+                poll => {
+                    tracing::debug!("poll return {:?}", poll);
+                    return poll;
+                }
             }
         }
     }
