@@ -99,6 +99,7 @@ pub trait Client {
         &self,
         msg: R,
     ) -> Vec<ClientResult<DnsResponse>> {
+        tracing::debug!("Sending request");
         let (client, runtime) = match self.spawn_client() {
             Ok(c_r) => c_r,
             Err(e) => return vec![Err(e)],

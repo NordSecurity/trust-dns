@@ -72,6 +72,7 @@ impl DnsHandle for AsyncDnssecClient {
     type Error = ProtoError;
 
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         self.client.send(request)
     }
 }
