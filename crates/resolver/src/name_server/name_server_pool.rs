@@ -323,7 +323,11 @@ where
     let mut backoff = Duration::from_millis(20);
     let mut busy = SmallVec::<[NameServer<P>; 2]>::new();
 
+    tracing::debug!(?conns, ?opts);
+
     loop {
+        tracing::debug!(?backoff, ?busy);
+
         let request_cont = request.clone();
 
         // construct the parallel requests, 2 is the default
@@ -346,12 +350,16 @@ where
             }
         }
 
+        tracing::debug!(?par_conns);
+
         if par_conns.is_empty() {
             if !busy.is_empty() && backoff < Duration::from_millis(300) {
+                tracing::debug!("Start delay");
                 <<P as ConnectionProvider>::RuntimeProvider as RuntimeProvider>::Timer::delay_for(
                     backoff,
                 )
                 .await;
+                tracing::debug!("Stopped delay");
                 conns.extend(busy.drain(..));
                 backoff *= 2;
                 continue;
@@ -368,7 +376,11 @@ where
             })
             .collect::<FuturesUnordered<_>>();
 
+        tracing::debug!(?requests);
+
         while let Some(result) = requests.next().await {
+            tracing::debug!(?result);
+
             let (conn, e) = match result {
                 Ok(sent) => return Ok(sent),
                 Err((conn, e)) => (conn, e),
