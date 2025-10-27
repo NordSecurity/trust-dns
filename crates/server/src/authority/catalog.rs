@@ -780,7 +780,7 @@ async fn build_forwarded_response(
             return Err(LookupError::ResponseCode(ResponseCode::Refused));
         }
         Ok(l) => (Answer::Normal(l), Box::<AuthLookup>::default()),
-        Err(e) if e.is_nx_domain() => {
+        Err(e) if e.is_no_records_found() || e.is_nx_domain() => {
             debug!(error = ?e, "error resolving");
 
             if e.is_nx_domain() {
