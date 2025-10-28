@@ -781,6 +781,7 @@ async fn build_forwarded_response(
         }
         Ok(l) => (Answer::Normal(l), Box::<AuthLookup>::default()),
         Err(e) if e.is_no_records_found() || e.is_nx_domain() => {
+            println!("{e:?}");
             debug!(error = ?e, "error resolving");
 
             if e.is_nx_domain() {
@@ -833,6 +834,7 @@ async fn build_forwarded_response(
             }
         }
         Err(e) => {
+            println!("{e:?}");
             debug!(error = ?e, "error resolving");
             (
                 Answer::Normal(Box::new(EmptyLookup)),
@@ -921,7 +923,7 @@ async fn build_forwarded_response(
 
     let result = match answers {
         Answer::Normal(answers) => {
-            debug!("Actual answers");
+            println!("Actual answers");
             LookupSections {
                 answers,
                 ns: authorities,
