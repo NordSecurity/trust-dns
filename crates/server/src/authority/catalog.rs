@@ -781,7 +781,7 @@ async fn build_forwarded_response(
         }
         Ok(l) => (Answer::Normal(l), Box::<AuthLookup>::default()),
         Err(e) if e.is_no_records_found() || e.is_nx_domain() => {
-            debug!(error = ?e, "error resolving 1");
+            debug!(error = ?e, "error resolving");
 
             if e.is_nx_domain() {
                 response_header.set_response_code(ResponseCode::NXDomain);
@@ -833,8 +833,11 @@ async fn build_forwarded_response(
             }
         }
         Err(e) => {
-            debug!(error = ?e, "error resolving 2");
-            return Err(e);
+            debug!(error = ?e, "error resolving");
+            (
+                Answer::Normal(Box::new(EmptyLookup)),
+                Box::<AuthLookup>::default(),
+            )
         }
     };
 
