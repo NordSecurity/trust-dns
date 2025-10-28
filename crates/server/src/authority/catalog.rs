@@ -841,6 +841,8 @@ async fn build_forwarded_response(
         }
     };
 
+    debug!("found answer (maybe)");
+
     if can_validate_dnssec {
         // section 3.2.2 ("the CD bit") of RFC4035 is a bit underspecified because it does not use
         // RFC2119 vocabulary ("MUST", "MAY", etc.) in some sentences that describe the resolver's
@@ -918,18 +920,24 @@ async fn build_forwarded_response(
     };
 
     let result = match answers {
-        Answer::Normal(answers) => LookupSections {
-            answers,
-            ns: authorities,
-            soa: Box::<AuthLookup>::default(),
-            additionals: Box::<AuthLookup>::default(),
-        },
-        Answer::NoRecords(soa) => LookupSections {
-            answers: Box::new(EmptyLookup),
-            ns: authorities,
-            soa,
-            additionals: Box::<AuthLookup>::default(),
-        },
+        Answer::Normal(answers) => {
+            debug!("Actual answers");
+            LookupSections {
+                answers,
+                ns: authorities,
+                soa: Box::<AuthLookup>::default(),
+                additionals: Box::<AuthLookup>::default(),
+            }
+        }
+        Answer::NoRecords(soa) => {
+            println!("empty lookup");
+            LookupSections {
+                answers: Box::new(EmptyLookup),
+                ns: authorities,
+                soa,
+                additionals: Box::<AuthLookup>::default(),
+            }
+        }
     };
 
     Ok(result)
