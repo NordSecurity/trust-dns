@@ -781,7 +781,6 @@ async fn build_forwarded_response(
         }
         Ok(l) => (Answer::Normal(l), Box::<AuthLookup>::default()),
         Err(e) if e.is_no_records_found() || e.is_nx_domain() => {
-            println!("{e:?}");
             debug!(error = ?e, "error resolving");
 
             if e.is_nx_domain() {
@@ -833,8 +832,11 @@ async fn build_forwarded_response(
                 (Answer::Normal(Box::new(EmptyLookup)), authorities)
             }
         }
+        Err(e) if e.is_io() => {
+            debug!(error = ?e, "error resolving");
+            return Err(e);
+        }
         Err(e) => {
-            println!("{e:?}");
             debug!(error = ?e, "error resolving");
             (
                 Answer::Normal(Box::new(EmptyLookup)),
@@ -842,8 +844,6 @@ async fn build_forwarded_response(
             )
         }
     };
-
-    debug!("found answer (maybe)");
 
     if can_validate_dnssec {
         // section 3.2.2 ("the CD bit") of RFC4035 is a bit underspecified because it does not use
@@ -922,24 +922,18 @@ async fn build_forwarded_response(
     };
 
     let result = match answers {
-        Answer::Normal(answers) => {
-            println!("Actual answers");
-            LookupSections {
-                answers,
-                ns: authorities,
-                soa: Box::<AuthLookup>::default(),
-                additionals: Box::<AuthLookup>::default(),
-            }
-        }
-        Answer::NoRecords(soa) => {
-            println!("empty lookup");
-            LookupSections {
-                answers: Box::new(EmptyLookup),
-                ns: authorities,
-                soa,
-                additionals: Box::<AuthLookup>::default(),
-            }
-        }
+        Answer::Normal(answers) => LookupSections {
+            answers,
+            ns: authorities,
+            soa: Box::<AuthLookup>::default(),
+            additionals: Box::<AuthLookup>::default(),
+        },
+        Answer::NoRecords(soa) => LookupSections {
+            answers: Box::new(EmptyLookup),
+            ns: authorities,
+            soa,
+            additionals: Box::<AuthLookup>::default(),
+        },
     };
 
     Ok(result)
