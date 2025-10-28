@@ -832,16 +832,16 @@ async fn build_forwarded_response(
                 (Answer::Normal(Box::new(EmptyLookup)), authorities)
             }
         }
-        Err(e) if e.is_io() => {
-            debug!(error = ?e, "error resolving");
-            return Err(e);
-        }
         Err(e) => {
             debug!(error = ?e, "error resolving");
-            (
-                Answer::Normal(Box::new(EmptyLookup)),
-                Box::<AuthLookup>::default(),
-            )
+            if e.is_io() || matches!(e, LookupError::ResponseCode(ResponseCode::Unknown(_))) {
+                return Err(e);
+            } else {
+                (
+                    Answer::Normal(Box::new(EmptyLookup)),
+                    Box::<AuthLookup>::default(),
+                )
+            }
         }
     };
 
