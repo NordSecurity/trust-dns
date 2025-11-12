@@ -834,7 +834,14 @@ async fn build_forwarded_response(
         }
         Err(e) => {
             debug!(error = ?e, "error resolving");
-            return Err(e);
+            if e.is_io() || matches!(e, LookupError::ResponseCode(ResponseCode::Unknown(_))) {
+                return Err(e);
+            } else {
+                (
+                    Answer::Normal(Box::new(EmptyLookup)),
+                    Box::<AuthLookup>::default(),
+                )
+            }
         }
     };
 
