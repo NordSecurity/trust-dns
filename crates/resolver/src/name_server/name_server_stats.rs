@@ -58,7 +58,7 @@ impl Default for NameServerStats {
         // Initialize the SRTT to a randomly generated value that represents a
         // very low RTT. Such a value helps ensure that each server is attempted
         // early.
-        Self::new(Duration::from_micros(rand::thread_rng().gen_range(1..32)))
+        Self::new(Duration::from_micros(rand::rng().random_range(1..32)))
     }
 }
 

@@ -16,7 +16,8 @@ use async_trait::async_trait;
 use futures_util::stream::Stream;
 use futures_util::{future::Future, ready, TryFutureExt};
 use rand;
-use rand::distributions::{uniform::Uniform, Distribution};
+use rand::distr::uniform::Uniform;
+use rand::prelude::*;
 use tracing::debug;
 
 use crate::udp::MAX_RECEIVE_BUFFER_SIZE;
@@ -293,8 +294,14 @@ impl<S: DnsUdpSocket + Send> Future for NextRandomUdpSocket<S> {
             //
             //    The dynamic port range defined by IANA consists of the 49152-65535
             //    range, and is meant for the selection of ephemeral ports.
-            let rand_port_range = Uniform::new_inclusive(49152_u16, u16::max_value());
-            let mut rand = rand::thread_rng();
+            let rand_port_range = match Uniform::new_inclusive(49152_u16, u16::max_value()) {
+                Ok(r) => r,
+                Err(e) => {
+                    debug!("Unable make rand_port_range: {}", e);
+                    return Poll::Pending;
+                }
+            };
+            let mut rand = rand::rng();
 
             for attempt in 0..10 {
                 let port = rand_port_range.sample(&mut rand);
