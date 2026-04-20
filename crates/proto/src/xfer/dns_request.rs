@@ -84,6 +84,7 @@ impl DerefMut for DnsRequest {
 
 impl From<Message> for DnsRequest {
     fn from(message: Message) -> Self {
+        tracing::debug!("Converting to DnsRequest");
         Self::new(message, DnsRequestOptions::default())
     }
 }

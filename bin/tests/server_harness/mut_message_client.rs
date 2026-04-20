@@ -30,6 +30,7 @@ impl<C: ClientHandle + Unpin> DnsHandle for MutMessageHandle<C> {
 
     #[allow(unused_mut)]
     fn send<R: Into<DnsRequest> + Unpin>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         let mut request = request.into();
 
         #[cfg(feature = "dnssec")]

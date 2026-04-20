@@ -230,6 +230,7 @@ where
     type Error = ResolveError;
 
     fn send<R: Into<DnsRequest>>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         let opts = self.options.clone();
         let request = request.into();
         let datagram_conns = Arc::clone(&self.datagram_conns);

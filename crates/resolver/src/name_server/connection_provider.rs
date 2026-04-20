@@ -244,6 +244,7 @@ impl DnsHandle for GenericConnection {
     type Error = ResolveError;
 
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
+        tracing::debug!("Sending request");
         ConnectionResponse(self.0.send(request))
     }
 }

@@ -148,7 +148,10 @@ impl DnsHandle for AsyncClient {
     type Error = ProtoError;
 
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
-        self.exchange.send(request)
+        debug!("Sending dns request");
+        let res = self.exchange.send(request);
+        debug!("Dns response recieved");
+        res
     }
 
     fn is_using_edns(&self) -> bool {

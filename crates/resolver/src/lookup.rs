@@ -205,11 +205,14 @@ impl<P: ConnectionProvider> DnsHandle for LookupEither<P> {
     }
 
     fn send<R: Into<DnsRequest> + Unpin + Send + 'static>(&self, request: R) -> Self::Response {
-        match *self {
+        tracing::debug!("Sending request");
+        let r = match *self {
             Self::Retry(ref c) => c.send(request),
             #[cfg(feature = "dnssec")]
             Self::Secure(ref c) => c.send(request),
-        }
+        };
+        tracing::debug!("reply");
+        r
     }
 }
 
