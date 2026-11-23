@@ -97,6 +97,8 @@ pub struct BinEncoder<'a> {
     name_pointers: Vec<(usize, Vec<u8>)>,
     mode: EncodeMode,
     canonical_names: bool,
+    /// Number of names encoded with compression enabled.
+    pub(crate) compressed_name_count: usize,
 }
 
 impl<'a> BinEncoder<'a> {
@@ -136,6 +138,7 @@ impl<'a> BinEncoder<'a> {
             name_pointers: Vec::new(),
             mode,
             canonical_names: false,
+            compressed_name_count: 0,
         }
     }
 
@@ -243,7 +246,7 @@ impl<'a> BinEncoder<'a> {
         assert!(start <= (u16::MAX as usize));
         assert!(end <= (u16::MAX as usize));
         assert!(start <= end);
-        if self.offset < 0x3FFF_usize {
+        if self.offset < 0x3FFF_usize && self.name_pointers.len() < COMPRESSION_CANDIDATE_LIMIT {
             self.name_pointers
                 .push((start, self.slice_of(start, end).to_vec())); // the next char will be at the len() location
         }
@@ -478,6 +481,13 @@ impl Rollback {
         encoder.set_offset(self.rollback_index)
     }
 }
+
+/// Maximum number of label pointers we will store for later use in name compression.
+///
+/// This is chosen to be a power of two, so that we use the full capacity of the backing vector.
+/// With the current limits, name compression searches make up a small portion of the time it takes
+/// to encode pathologically large messages.
+const COMPRESSION_CANDIDATE_LIMIT: usize = 64;
 
 /// In the Verify mode there maybe some things which are encoded differently, e.g. SIG0 records
 ///  should not be included in the additional count and not in the encoded data when in Verify
