@@ -622,26 +622,34 @@ impl Name {
         let last_index = encoder.offset();
         // now search for other labels already stored matching from the beginning label, strip then to the end
         //   if it's not found, then store this as a new label
-        for label_idx in &labels_written {
-            match encoder.get_label_pointer(*label_idx, last_index) {
-                // if writing canonical and already found, continue
-                Some(_) if canonical => continue,
-                Some(loc) if !canonical => {
-                    // reset back to the beginning of this label, and then write the pointer...
-                    encoder.set_offset(*label_idx);
-                    encoder.trim();
+        let compression = !canonical && encoder.compressed_name_count < COMPRESSED_NAME_LIMIT;
+        if compression {
+            encoder.compressed_name_count += 1;
+            for label_idx in &labels_written {
+                match encoder.get_label_pointer(*label_idx, last_index) {
+                    Some(loc) => {
+                        // reset back to the beginning of this label, and then write the pointer...
+                        encoder.set_offset(*label_idx);
+                        encoder.trim();
 
-                    // write out the pointer marker
-                    //  or'd with the location which shouldn't be larger than this 2^14 or 16k
-                    encoder.emit_u16(0xC000u16 | (loc & 0x3FFFu16))?;
+                        // write out the pointer marker
+                        //  or'd with the location which shouldn't be larger than this 2^14 or 16k
+                        encoder.emit_u16(0xC000u16 | (loc & 0x3FFFu16))?;
 
-                    // we found a pointer don't write more, break
-                    return Ok(());
+                        // we found a pointer don't write more, break
+                        return Ok(());
+                    }
+                    None => {
+                        // no existing label exists, store this new one.
+                        encoder.store_label_pointer(*label_idx, last_index);
+                    }
                 }
-                _ => {
-                    // no existing label exists, store this new one.
-                    encoder.store_label_pointer(*label_idx, last_index);
-                }
+            }
+        } else {
+            // Compression is disabled for either this name or the entire message. Just attempt to
+            // store the label pointers, in case they'll be used by an eligible name later.
+            for label_idx in &labels_written {
+                encoder.store_label_pointer(*label_idx, last_index);
             }
         }
 
@@ -1097,6 +1105,12 @@ impl BinEncodable for Name {
         self.emit_as_canonical(encoder, is_canonical_names)
     }
 }
+
+/// Maximum number of names for which name compression will be attempted per message.
+///
+/// This limit matches that from Unbound, see
+/// <https://nlnetlabs.nl/downloads/unbound/patch_CVE-2024-8508.diff>.
+const COMPRESSED_NAME_LIMIT: usize = 120;
 
 impl<'r> BinDecodable<'r> for Name {
     /// parses the chain of labels

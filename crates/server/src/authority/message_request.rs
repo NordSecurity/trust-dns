@@ -238,7 +238,7 @@ pub struct Queries {
 
 impl Queries {
     fn read_queries(decoder: &mut BinDecoder<'_>, count: usize) -> ProtoResult<Vec<LowerQuery>> {
-        let mut queries = Vec::with_capacity(count);
+        let mut queries = Vec::with_capacity(Ord::min(count, 8));
         for _ in 0..count {
             queries.push(LowerQuery::read(decoder)?);
         }
