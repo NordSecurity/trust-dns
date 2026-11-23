@@ -1028,7 +1028,7 @@ impl<'r> BinDecodable<'r> for Message {
 
         // get the questions
         let count = header.query_count() as usize;
-        let mut queries = Vec::with_capacity(count);
+        let mut queries = Vec::with_capacity(Ord::min(count, 8));
         for _ in 0..count {
             queries.push(Query::read(decoder)?);
         }
